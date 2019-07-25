@@ -163,10 +163,6 @@ func (*testClientSuite) testSelector(c *C, strategy string) {
 	}
 }
 
-func (t *testClientSuite) TestNormalWriteBinlog(c *C) {
-
-}
-
 type pumpInstance struct {
 	nodeID          string
 	Status          string
@@ -268,7 +264,7 @@ func (t *testClientSuite) TestWriteBinlog(c *C) {
 	c.Assert(err, NotNil)
 
 	// recover after recreate servers
-	servers = mustCreateServers(c, pumpServerConfig)
+	_ = mustCreateServers(c, pumpServerConfig)
 	err = pumpClient.WriteBinlog(blog)
 	c.Assert(err, IsNil)
 }

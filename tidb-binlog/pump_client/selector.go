@@ -134,7 +134,7 @@ func (r *RangeSelector) SetPumps(pumps []*PumpStatus) {
 func (r *RangeSelector) Select(binlog *pb.Binlog, retryTime int) *PumpStatus {
 	// TODO: use status' label to match suitable pump.
 	// FIXME: for concurrent Write, may return the same pump instance for one binlog, so will not
-	// try every pump instance if call Select to get another pump instance an retry.
+	// try every pump instance if call Select to get another pump instance with retry.
 	selectorLock.Lock()
 	defer selectorLock.Unlock()
 
@@ -200,7 +200,6 @@ func (u *LocalUnixSelector) Select(binlog *pb.Binlog, retryTime int) *PumpStatus
 
 // Feedback implement PumpSelector.Feedback
 func (u *LocalUnixSelector) Feedback(startTS int64, binlogType pb.BinlogType, pump *PumpStatus) {
-	return
 }
 
 // ScoreSelector select a pump by pump's score.

@@ -89,10 +89,12 @@ func (p *PumpStatus) markReCreateClient() {
 }
 
 func (p *PumpStatus) close() {
+	p.Lock()
 	if p.grpcConn != nil {
 		p.grpcConn.Close()
 		p.grpcConn = nil
 	}
+	p.Unlock()
 }
 
 // createGrpcClient create grpc client for online pump.
@@ -187,9 +189,5 @@ func (p *PumpStatus) IsUsable() bool {
 
 // ShouldBeUsable returns true if pump should be usable
 func (p *PumpStatus) ShouldBeUsable() bool {
-	if p.Status.State != node.Online {
-		return false
-	}
-
-	return true
+	return p.Status.State == node.Online
 }

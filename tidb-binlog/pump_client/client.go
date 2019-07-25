@@ -365,23 +365,28 @@ func (c *PumpsClient) backoffWriteBinlog(req *pb.WriteBinlogReq, binlogType pb.B
 	c.RUnlock()
 
 	var resp *pb.WriteBinlogResp
-	// send binlog to unavaliable pumps to retry again.
+	// send binlog to unavailable pumps to retry again.
 	for _, pump := range allPumps {
 		if !pump.ShouldBeUsable() {
 			continue
 		}
 
 		resp, err = pump.WriteBinlog(req, c.BinlogWriteTimeout)
-		if err == nil {
-			if resp.Errmsg != "" {
-				err = errors.New(resp.Errmsg)
-			} else {
-				// if this pump can write binlog success, set this pump to avaliable.
-				log.Info("[pumps client] write binlog to pump success, set this pump to avaliable", zap.String("NodeID", pump.NodeID))
-				c.setPumpAvaliable(pump, true)
-				return pump, nil
-			}
+		if err == nil && resp.Errmsg != "" {
+			err = errors.New(resp.Errmsg)
 		}
+
+		if err != nil {
+			log.Warn("[pumps client] try write binlog failed",
+				zap.String("error", err.Error()),
+				zap.String("NodeID", pump.NodeID))
+			continue
+		}
+
+		// if this pump can write binlog success, set this pump to avaliable.
+		log.Info("[pumps client] write binlog to pump success, set this pump to avaliable", zap.String("NodeID", pump.NodeID))
+		c.setPumpAvaliable(pump, true)
+		return pump, nil
 	}
 
 	return nil, errors.New("write binlog to unavaliable pump failed")
@@ -466,12 +471,7 @@ func (c *PumpsClient) updatePump(status *node.Status) (pump *PumpStatus, avaliab
 
 	if pump.Status.State != status.State {
 		avaliableChanged = true
-		avaliable = true
-		if pump.ShouldBeUsable() {
-			avaliable = true
-		} else {
-			avaliable = false
-		}
+		avaliable = pump.ShouldBeUsable()
 	}
 
 	if status.Addr != pump.Status.Addr {
