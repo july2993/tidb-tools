@@ -285,7 +285,7 @@ func (c *PumpsClient) WriteBinlog(binlog *pb.Binlog) error {
 		log.Debug("[pumps client] try write to pump", zap.String("NodeID", pump.NodeID))
 		for i := 0; i < 3; i++ {
 			if i > 0 {
-				time.Sleep(time.Second * time.Duration(i))
+				time.Sleep(RetryInterval * time.Duration(i+1))
 			}
 
 			resp, err = pump.WriteBinlog(req, c.BinlogWriteTimeout)
@@ -324,7 +324,7 @@ func (c *PumpsClient) WriteBinlog(binlog *pb.Binlog) error {
 				return errors.Trace(err)
 			}
 
-			// make sure already retry every avaliable pump.
+			// make sure already retry every available pump.
 			if time.Since(startTime) > c.BinlogWriteTimeout && retryTime > pumpNum {
 				break
 			}
@@ -459,7 +459,7 @@ func (c *PumpsClient) SetSelectStrategy(strategy string) error {
 }
 
 // updatePump update pump's status, and return whether pump's status is changed.
-func (c *PumpsClient) updatePump(status *node.Status) (pump *PumpStatus, avaliableChanged, avaliable bool) {
+func (c *PumpsClient) updatePump(status *node.Status) (pump *PumpStatus, statusChanged, avaliable bool) {
 	var ok bool
 	c.Lock()
 	defer c.Unlock()
@@ -470,14 +470,15 @@ func (c *PumpsClient) updatePump(status *node.Status) (pump *PumpStatus, avaliab
 	}
 
 	if pump.Status.State != status.State {
-		avaliableChanged = true
-		avaliable = pump.ShouldBeUsable()
+		statusChanged = true
 	}
 
 	if status.Addr != pump.Status.Addr {
 		pump.markReCreateClient()
 	}
 	pump.Status = *status
+
+	avaliable = pump.ShouldBeUsable()
 
 	return
 }
