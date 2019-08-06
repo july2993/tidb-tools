@@ -576,7 +576,7 @@ func (c *PumpsClient) detect() {
 			req := &pb.WriteBinlogReq{ClusterID: c.ClusterID, Payload: nil}
 			c.RLock()
 			for _, pump := range c.Pumps.UnAvaliablePumps {
-				if pump.IsUsable() {
+				if pump.ShouldBeUsable() {
 					needCheckPumps = append(needCheckPumps, pump)
 				}
 			}
