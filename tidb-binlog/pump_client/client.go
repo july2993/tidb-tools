@@ -542,6 +542,9 @@ func (c *PumpsClient) watchStatus(revision int64) {
 					pump, avaliableChanged, avaliable := c.updatePump(status)
 					if avaliableChanged {
 						log.Info("[pumps client] pump's state is changed", zap.String("NodeID", pump.Status.NodeID), zap.String("state", status.State))
+						if pump.grpcConn != nil {
+							pump.grpcConn.ResetConnectBackoff()
+						}
 						c.setPumpAvaliable(pump, avaliable)
 					}
 
